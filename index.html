@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NovaCure Control Tower</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --tb-bg:#0E4B4B;
+  --tb-bg-2:#0C4141;
+  --tb-border:rgba(255,255,255,0.10);
+  --tb-text:#FFFFFF;
+  --tb-text-dim:rgba(255,255,255,0.68);
+  --tb-text-faint:rgba(255,255,255,0.42);
+  --tb-hover:rgba(255,255,255,0.10);
+  --tb-active:rgba(255,255,255,0.16);
+  --tb-field:rgba(255,255,255,0.09);
+  --tb-field-border:rgba(255,255,255,0.22);
+
+  --bg:#F2F6F5;
+  --panel:#FFFFFF;
+  --panel-2:#EEF3F2;
+  --panel-hover:#E6EEEC;
+  --border:#DEE7E5;
+  --border-soft:#E7EFED;
+  --text:#122522;
+  --text-dim:#5B6D69;
+  --text-faint:#8FA09C;
+
+  --accent:#0E8F86;
+  --accent-dim:#0E4B4B;
+  --accent-glow:rgba(14,143,134,0.10);
+  --blue:#3568C7;
+  --green:#1F9D55;
+  --green-dim:#E4F7EC;
+  --amber:#B5790A;
+  --amber-dim:#FBF0DA;
+  --red:#D1393B;
+  --red-dim:#FCEAEA;
+  --radius:10px;
+  --radius-lg:16px;
+  font-size:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;height:100%;}
+body{display:flex;flex-direction:column;min-height:100vh;}
+.mono{font-family:'JetBrains Mono',monospace;}
+.disp{font-family:'Space Grotesk',sans-serif;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+::-webkit-scrollbar-track{background:transparent;}
+
+/* ---------- topbar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:18px;
+  padding:12px 24px;
+  background:var(--tb-bg);
+  border-bottom:1px solid var(--tb-border);
+}
+.brand{display:flex;align-items:center;gap:10px;margin-right:6px;}
+.brand-mark{
+  width:34px;height:34px;border-radius:9px;
+  background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.24);
+  display:flex;align-items:center;justify-content:center;
+  color:#FFFFFF;font-family:'Space Grotesk';font-weight:700;font-size:15px;
+}
+.brand-text .t1{font-family:'Space Grotesk';font-weight:600;font-size:15px;letter-spacing:.2px;color:var(--tb-text);}
+.status-pill{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 12px;border-radius:999px;
+  background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.4);
+  font-size:12.5px;font-weight:600;color:#7CF0AC;
+  transition:all .3s ease;
+}
+.status-pill.warn{background:rgba(245,165,36,0.16);border-color:rgba(245,165,36,.45);color:#FBC96B;}
+.status-pill.crit{background:rgba(239,74,74,0.18);border-color:rgba(239,74,74,.5);color:#FF9E9E;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px currentColor22;}
+.status-pill.live .status-dot{animation:pulse 1.6s infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 currentColor55;}70%{box-shadow:0 0 0 6px transparent;}100%{box-shadow:0 0 0 0 transparent;}}
+.spacer{flex:1;}
+.tb-actions{display:flex;align-items:center;gap:10px;}
+button,select{font-family:'Inter',sans-serif;cursor:pointer;border:none;outline:none;}
+.btn{
+  padding:10px 16px;border-radius:9px;font-size:13px;font-weight:600;
+  display:flex;align-items:center;gap:8px;transition:all .15s ease;white-space:nowrap;
+}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-danger{background:linear-gradient(180deg,#E9585A,#D1393B);color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.1) inset,0 6px 18px -6px rgba(209,57,59,.5);}
+.btn-danger:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px);}
+.btn-success{background:linear-gradient(180deg,#2FBE72,#1F9D55);color:#06301A;box-shadow:0 0 0 1px rgba(255,255,255,.14) inset,0 6px 18px -6px rgba(31,157,85,.5);}
+.btn-success:hover:not(:disabled){filter:brightness(1.06);transform:translateY(-1px);}
+.btn-ghost{background:var(--tb-field);color:var(--tb-text);border:1px solid var(--tb-field-border);}
+.btn-ghost:hover:not(:disabled){background:var(--tb-hover);}
+
+.delay-group{display:flex;align-items:center;gap:8px;background:var(--tb-field);border:1px solid var(--tb-field-border);border-radius:9px;padding:6px 6px 6px 12px;}
+.delay-group label{font-size:11.5px;color:var(--tb-text-dim);font-weight:600;white-space:nowrap;}
+.delay-group select{
+  background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);
+  border-radius:6px;padding:6px 8px;font-size:12.5px;font-weight:600;font-family:'JetBrains Mono';
+}
+.delay-group select option{color:#0E1A18;}
+
+/* ---------- app shell ---------- */
+.app{display:flex;flex:1;min-height:0;}
+.sidebar{
+  width:216px;flex-shrink:0;background:var(--tb-bg);
+  border-right:1px solid var(--tb-border);
+  padding:18px 12px;display:flex;flex-direction:column;gap:3px;
+}
+.nav-label{font-size:10.5px;color:var(--tb-text-faint);text-transform:uppercase;letter-spacing:.6px;padding:8px 10px 6px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:8px;
+  font-size:13.5px;color:var(--tb-text-dim);font-weight:500;
+  background:transparent;width:100%;text-align:left;border-left:2px solid transparent;
+}
+.nav-item .ic{width:16px;text-align:center;font-size:13px;opacity:.9;}
+.nav-item:hover{background:var(--tb-hover);color:var(--tb-text);}
+.nav-item.active{background:var(--tb-active);color:#FFFFFF;border-left:2px solid #6FE3D9;}
+.nav-item .cnt{margin-left:auto;font-size:10.5px;font-family:'JetBrains Mono';background:rgba(255,255,255,0.14);padding:1px 6px;border-radius:20px;color:rgba(255,255,255,0.85);}
+.nav-item.active .cnt{background:rgba(255,255,255,0.22);color:#fff;}
+.nav-item .cnt.alert{background:#D1393B;color:#fff;}
+
+.content{flex:1;min-width:0;overflow-y:auto;padding:22px 28px 60px;background:var(--bg);}
+.view{display:none;}
+.view.active{display:block;animation:fadein .25s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+.page-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.page-head h1{font-family:'Space Grotesk';font-size:20px;font-weight:600;color:var(--text);}
+.page-head p{font-size:12.5px;color:var(--text-dim);margin-top:2px;}
+
+/* ---------- banner ---------- */
+.banner{
+  display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:var(--radius);
+  margin-bottom:18px;border:1px solid var(--border);background:var(--panel);
+  animation:fadein .3s ease;
+}
+.banner.crit{background:linear-gradient(90deg, rgba(209,57,59,.08), rgba(209,57,59,.02)), var(--panel);border-color:rgba(209,57,59,.35);}
+.banner.ok{background:linear-gradient(90deg, rgba(31,157,85,.09), rgba(31,157,85,.02)), var(--panel);border-color:rgba(31,157,85,.35);}
+.banner .ic{font-size:19px;line-height:1;}
+.banner .tt{font-weight:700;font-size:13.5px;margin-bottom:2px;}
+.banner.crit .tt{color:var(--red);}
+.banner.ok .tt{color:var(--green);}
+.banner .dd{font-size:12.5px;color:var(--text-dim);line-height:1.5;}
+
+/* ---------- kpi cards ---------- */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:22px;}
+@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr);}}
+.kpi{
+  background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius-lg);
+  padding:14px 16px;position:relative;overflow:hidden;transition:border-color .25s ease;
+}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--green);transition:background .3s ease;}
+.kpi.warn::before{background:var(--amber);}
+.kpi.crit::before{background:var(--red);}
+.kpi .lbl{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:8px;}
+.kpi .val{font-family:'Space Grotesk';font-size:25px;font-weight:600;display:flex;align-items:baseline;gap:6px;transition:color .3s ease;color:var(--text);}
+.kpi .val .unit{font-size:12px;color:var(--text-faint);font-weight:500;}
+.kpi .delta{font-size:11.5px;margin-top:6px;color:var(--text-dim);font-family:'JetBrains Mono';}
+.kpi .delta.bad{color:var(--red);}
+.kpi .delta.good{color:var(--green);}
+
+/* ---------- flow diagram ---------- */
+.flow-card{
+  background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius-lg);
+  padding:22px 20px 18px;margin-bottom:22px;
+}
+.flow-card .fh{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.flow-card .fh h3{font-family:'Space Grotesk';font-size:14.5px;font-weight:600;color:var(--text);}
+.flow-card .fh .legend{display:flex;gap:14px;font-size:11px;color:var(--text-dim);}
+.flow-card .fh .legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend .dot{width:8px;height:8px;border-radius:50%;}
+.flow-row{display:flex;align-items:center;}
+.flow-node{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;position:relative;padding:0 4px;
+}
+.node-ic{
+  width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-size:22px;background:var(--panel-2);border:2px solid var(--border);
+  transition:all .45s cubic-bezier(.4,0,.2,1);position:relative;z-index:2;
+}
+.node-ic.st-green{border-color:var(--green);background:var(--green-dim);box-shadow:0 0 0 4px rgba(31,157,85,.08);}
+.node-ic.st-amber{border-color:var(--amber);background:var(--amber-dim);box-shadow:0 0 0 4px rgba(181,121,10,.08);}
+.node-ic.st-red{border-color:var(--red);background:var(--red-dim);box-shadow:0 0 0 4px rgba(209,57,59,.1);animation:shake .5s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-2px);}75%{transform:translateX(2px);}}
+.node-title{font-size:12.5px;font-weight:600;text-align:center;color:var(--text);}
+.node-sub{font-size:10.5px;color:var(--text-faint);text-align:center;min-height:13px;font-family:'JetBrains Mono';transition:color .3s ease;}
+.node-sub.st-red{color:var(--red);}
+.node-sub.st-amber{color:var(--amber);}
+.flow-connector{
+  flex:0 0 auto;width:34px;height:2px;background:var(--border);position:relative;top:-31px;
+  overflow:visible;
+}
+.flow-connector::after{
+  content:"";position:absolute;right:-1px;top:-3px;border:5px solid transparent;border-left-color:var(--border);
+}
+.flow-connector.active{background:var(--accent);}
+.flow-connector.active::after{border-left-color:var(--accent);}
+.flow-connector.bad{background:var(--red);}
+.flow-connector.bad::after{border-left-color:var(--red);}
+
+/* ---------- recommended action ---------- */
+.rec-card{
+  display:none;background:linear-gradient(90deg, rgba(53,104,199,.08), rgba(14,143,134,.06)), var(--panel);
+  border:1px solid rgba(53,104,199,.3);border-radius:var(--radius-lg);
+  padding:16px 18px;margin-bottom:22px;align-items:center;gap:16px;justify-content:space-between;flex-wrap:wrap;
+}
+.rec-card.show{display:flex;animation:fadein .3s ease;}
+.rec-card .rt{font-size:11px;color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.rec-card .rd{font-family:'Space Grotesk';font-size:15px;font-weight:600;margin-bottom:3px;color:var(--text);}
+.rec-card .rs{font-size:12px;color:var(--text-dim);}
+
+/* ---------- grid layouts ---------- */
+.two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:22px;}
+@media(max-width:1050px){.two-col{grid-template-columns:1fr;}}
+.card{background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius-lg);padding:18px 18px;}
+.card h3{font-family:'Space Grotesk';font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;color:var(--text);}
+.card h3 .sm{font-size:11px;color:var(--text-faint);font-weight:500;font-family:'Inter';}
+.chart-wrap{position:relative;height:220px;}
+
+/* ---------- tables ---------- */
+.table-card{background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:22px;}
+.table-head{padding:16px 18px 4px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.table-head h3{font-family:'Space Grotesk';font-size:14.5px;font-weight:600;color:var(--text);}
+table{width:100%;border-collapse:collapse;font-size:12.8px;}
+thead th{
+  text-align:left;padding:11px 18px;color:var(--text-faint);font-weight:600;font-size:10.5px;
+  text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border-soft);white-space:nowrap;
+}
+tbody td{padding:11px 18px;border-bottom:1px solid var(--border-soft);color:var(--text);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr{transition:background .15s ease;}
+tbody tr:hover{background:var(--panel-2);}
+tbody tr.hl{background:rgba(209,57,59,.05);}
+.mono-cell{font-family:'JetBrains Mono';font-size:12px;color:var(--text-dim);}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;
+  font-size:11px;font-weight:600;white-space:nowrap;
+}
+.badge.green{background:var(--green-dim);color:var(--green);}
+.badge.amber{background:var(--amber-dim);color:var(--amber);}
+.badge.red{background:var(--red-dim);color:var(--red);}
+.badge.blue{background:#E7EEFB;color:var(--blue);}
+.badge .d{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+/* ---------- progress bars ---------- */
+.pbar-track{width:100%;height:6px;border-radius:6px;background:var(--panel-2);overflow:hidden;}
+.pbar-fill{height:100%;border-radius:6px;background:var(--accent);transition:width .5s ease, background .3s ease;}
+.days-bar{display:flex;align-items:center;gap:8px;}
+.days-bar .pbar-track{flex:1;}
+.days-bar .n{font-family:'JetBrains Mono';font-size:12px;width:34px;text-align:right;color:var(--text);}
+
+/* ---------- alerts list ---------- */
+.alert-list{display:flex;flex-direction:column;gap:8px;}
+.alert-item{
+  display:flex;gap:11px;padding:11px 13px;border-radius:9px;background:var(--panel-2);
+  border-left:3px solid var(--border);align-items:flex-start;
+}
+.alert-item.red{border-left-color:var(--red);}
+.alert-item.amber{border-left-color:var(--amber);}
+.alert-item.green{border-left-color:var(--green);}
+.alert-item .aic{font-size:15px;margin-top:1px;}
+.alert-item .at{font-size:12.5px;font-weight:600;margin-bottom:2px;color:var(--text);}
+.alert-item .ad{font-size:11.5px;color:var(--text-dim);line-height:1.45;}
+.alert-item .ts{font-size:10px;color:var(--text-faint);margin-top:4px;font-family:'JetBrains Mono';}
+.empty-state{padding:30px 10px;text-align:center;color:var(--text-faint);font-size:12.5px;}
+.empty-state .ic{font-size:26px;margin-bottom:8px;}
+
+/* ---------- route / gps viz ---------- */
+.route-wrap{padding:6px 4px 2px;}
+.route-track{position:relative;height:6px;background:var(--panel-2);border-radius:6px;margin:14px 4px 8px;}
+.route-fill{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:var(--accent);transition:width .4s ease,background .3s ease;}
+.route-dot{
+  position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--panel);
+  border:3px solid var(--accent);transform:translate(-50%,-50%);transition:left .4s ease, border-color .3s ease;
+  box-shadow:0 0 0 4px rgba(14,143,134,.13);
+}
+.route-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);}
+.route-coords{font-family:'JetBrains Mono';font-size:10.5px;color:var(--text-faint);margin-top:6px;}
+
+/* ---------- shipment cards ---------- */
+.ship-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:22px;}
+@media(max-width:1050px){.ship-grid{grid-template-columns:1fr;}}
+.ship-card{background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius-lg);padding:16px 18px;}
+.ship-card.hl{border-color:rgba(209,57,59,.35);}
+.ship-card .shdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.ship-card .sid{font-family:'JetBrains Mono';font-size:13px;font-weight:600;color:var(--text);}
+.ship-card .sroute{font-size:12px;color:var(--text-dim);margin-bottom:2px;}
+.ship-card .seta{font-size:11.5px;color:var(--text-faint);margin-top:10px;}
+.ship-card .seta b{color:var(--text);font-family:'JetBrains Mono';}
+
+/* ---------- portal ---------- */
+.portal-wrap{max-width:640px;}
+.portal-card{background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius-lg);padding:24px;margin-bottom:18px;}
+.portal-card .pk{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:6px;}
+.portal-card h2{font-family:'Space Grotesk';font-size:17px;margin-bottom:4px;color:var(--text);}
+.portal-card .psub{font-size:12.5px;color:var(--text-dim);margin-bottom:18px;}
+.portal-search{display:flex;gap:10px;}
+.portal-search input{
+  flex:1;background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+  padding:11px 14px;border-radius:9px;font-size:13px;font-family:'JetBrains Mono';outline:none;
+}
+.portal-search input:focus{border-color:var(--accent);}
+.portal-search input::placeholder{color:var(--text-faint);font-family:'Inter';}
+.portal-hint{font-size:11px;color:var(--text-faint);margin-top:9px;}
+.portal-hint b{color:var(--text-dim);font-family:'JetBrains Mono';font-weight:500;}
+.result-card{display:none;}
+.result-card.show{display:block;animation:fadein .3s ease;}
+.res-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.res-top .rname{font-family:'Space Grotesk';font-size:16px;font-weight:600;color:var(--text);}
+.res-top .rprod{font-size:12.5px;color:var(--text-dim);margin-top:2px;}
+.res-steps{display:flex;justify-content:space-between;margin:20px 4px 10px;position:relative;}
+.res-steps::before{content:"";position:absolute;left:14px;right:14px;top:11px;height:2px;background:var(--border);z-index:0;}
+.res-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;position:relative;z-index:1;}
+.res-step .rdot{width:22px;height:22px;border-radius:50%;background:var(--panel-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-dim);}
+.res-step.done .rdot{background:var(--accent);border-color:var(--accent);color:#fff;}
+.res-step.current .rdot{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 4px rgba(14,143,134,.13);}
+.res-step .rlabel{font-size:9.5px;color:var(--text-faint);text-align:center;max-width:64px;}
+.res-step.done .rlabel,.res-step.current .rlabel{color:var(--text-dim);}
+.res-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px;}
+.res-fact{background:var(--panel-2);border-radius:9px;padding:11px 13px;}
+.res-fact .fl{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px;}
+.res-fact .fv{font-family:'JetBrains Mono';font-size:13px;font-weight:600;color:var(--text);}
+.res-alert{margin-top:14px;}
+
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{
+  padding:6px 12px;border-radius:20px;font-size:11.5px;font-weight:600;background:var(--panel-2);
+  color:var(--text-dim);border:1px solid var(--border);
+}
+.chip.active{background:var(--accent-glow);color:var(--accent);border-color:var(--accent);}
+
+.foot-note{font-size:11px;color:var(--text-faint);text-align:center;padding:26px 0 6px;}
+
+html,body{overflow-x:hidden;width:100%;}
+
+/* ---------- hamburger + drawer (mobile) ---------- */
+.hamburger{
+  display:none;flex-direction:column;justify-content:center;gap:4px;
+  width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.09);
+  border:1px solid rgba(255,255,255,0.2);flex-shrink:0;padding:0;
+}
+.hamburger span{display:block;width:16px;height:2px;background:#fff;border-radius:2px;margin:0 auto;}
+.sidebar-close{display:none;}
+.sidebar-backdrop{display:none;}
+
+@media(max-width:900px){
+  .topbar{flex-wrap:wrap;row-gap:10px;padding:12px 16px;}
+  .brand{flex-shrink:0;}
+  .status-pill{flex-shrink:0;white-space:nowrap;}
+  .spacer{flex-basis:100%;height:0;order:3;}
+  .tb-actions{flex-wrap:wrap;flex-shrink:0;order:4;width:100%;justify-content:flex-start;}
+  .hamburger{display:flex;}
+
+  .app{position:relative;}
+  .sidebar{
+    display:flex;position:fixed;top:0;left:0;bottom:0;z-index:150;
+    width:240px;max-width:80vw;transform:translateX(-100%);
+    transition:transform .25s ease;box-shadow:2px 0 28px rgba(0,0,0,.28);
+    padding-top:16px;
+  }
+  .sidebar.open{transform:translateX(0);}
+  .sidebar-close{
+    display:flex;align-items:center;justify-content:center;
+    width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.2);color:#fff;font-size:18px;line-height:1;
+    margin:0 4px 10px auto;align-self:flex-end;
+  }
+  .sidebar-backdrop{
+    position:fixed;inset:0;background:rgba(8,20,18,.5);z-index:140;
+    opacity:0;pointer-events:none;transition:opacity .2s ease;
+  }
+  .sidebar-backdrop.show{display:block;opacity:1;pointer-events:auto;}
+
+  .content{padding:18px 16px 50px;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .flow-node .node-title{font-size:10.5px;}
+  .flow-row{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;}
+  .flow-node{flex:0 0 104px;}
+  .flow-connector{flex:0 0 26px;width:26px;}
+  .page-head h1{font-size:18px;}
+}
+
+@media(max-width:560px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:9px;}
+  .kpi{padding:12px 12px;}
+  .kpi .val{font-size:21px;}
+  .res-facts{grid-template-columns:1fr;}
+  .delay-group{padding:5px 5px 5px 10px;}
+  .btn{padding:9px 12px;font-size:12.5px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="brand">
+    <div class="brand-mark">N</div>
+    <div class="brand-text"><div class="t1">NovaCure Control Tower</div></div>
+  </div>
+  <div class="status-pill live" id="globalStatusPill">
+    <div class="status-dot"></div>
+    <span id="globalStatusText">All systems on track</span>
+  </div>
+  <div class="spacer"></div>
+  <div class="tb-actions">
+    <button class="btn btn-ghost" id="btnReset" onclick="resetSimulation()">
+      <span>&#8634;</span> Reset simulation
+    </button>
+    <button class="btn btn-success" id="btnMitigate" style="display:none" onclick="applyRecommendedAction()">
+      &#128994; Apply recommended action
+    </button>
+    <div class="delay-group">
+      <label for="delayDaysSelect">Delay</label>
+      <select id="delayDaysSelect"></select>
+    </div>
+    <button class="btn btn-danger" id="btnDisrupt" onclick="simulateDisruption()">
+      &#128308; Simulate API shipment delay
+    </button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+  <nav class="sidebar" id="sidebar">
+    <button class="sidebar-close" id="sidebarClose" onclick="closeSidebar()" aria-label="Close menu">&times;</button>
+    <div class="nav-label">Monitor</div>
+    <button class="nav-item active" data-view="overview" onclick="showView('overview')"><span class="ic">&#9673;</span>Overview</button>
+    <button class="nav-item" data-view="suppliers" onclick="showView('suppliers')"><span class="ic">&#128230;</span>Suppliers & materials</button>
+    <button class="nav-item" data-view="inventory" onclick="showView('inventory')"><span class="ic">&#127970;</span>Inventory</button>
+    <button class="nav-item" data-view="production" onclick="showView('production')"><span class="ic">&#9881;</span>Production</button>
+    <button class="nav-item" data-view="shipments" onclick="showView('shipments')"><span class="ic">&#128666;</span>Shipments</button>
+    <button class="nav-item" data-view="orders" onclick="showView('orders')"><span class="ic">&#128203;</span>Customer orders</button>
+    <button class="nav-item" data-view="risk" onclick="showView('risk')">
+      <span class="ic">&#9888;</span>Risk & alert center
+      <span class="cnt" id="navAlertCount">0</span>
+    </button>
+    <div class="nav-label" style="margin-top:10px;">Customer</div>
+    <button class="nav-item" data-view="portal" onclick="showView('portal')"><span class="ic">&#128269;</span>Order tracking portal</button>
+  </nav>
+
+  <main class="content">
+
+    <!-- ============ OVERVIEW ============ -->
+    <section class="view active" id="view-overview">
+      <div class="page-head">
+        <div><h1>Executive overview</h1><p>NovaCure Ltd. &mdash; live network status, Dhaka, Bangladesh</p></div>
+      </div>
+
+      <div id="overviewBanner"></div>
+
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <div class="flow-card">
+        <div class="fh">
+          <h3>Supply chain flow &mdash; Supplier &rarr; Raw material &rarr; Inventory &rarr; Production &rarr; Shipment &rarr; Customer</h3>
+          <div class="legend">
+            <span><span class="dot" style="background:var(--green)"></span>On track</span>
+            <span><span class="dot" style="background:var(--amber)"></span>At risk</span>
+            <span><span class="dot" style="background:var(--red)"></span>Delayed</span>
+          </div>
+        </div>
+        <div class="flow-row" id="flowRow"></div>
+      </div>
+
+      <div class="rec-card" id="recCard">
+        <div>
+          <div class="rt">Recommended action</div>
+          <div class="rd">Activate alternate API supplier &mdash; BioGen Labs (India)</div>
+          <div class="rs">Expedited air freight can restore API availability within 48 hours and protect at-risk customer orders.</div>
+        </div>
+        <button class="btn btn-success" onclick="applyRecommendedAction()">&#128994; Apply recommended action</button>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>Orders at risk &mdash; trend <span class="sm" id="ordersTrendSub">last 8 hours</span></h3>
+          <div class="chart-wrap"><canvas id="chartOrdersTrend"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Active alerts <span class="sm" id="overviewAlertSub">0 open</span></h3>
+          <div class="alert-list" id="overviewAlertList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SUPPLIERS ============ -->
+    <section class="view" id="view-suppliers">
+      <div class="page-head">
+        <div><h1>Supplier & raw material visibility</h1><p>Active pharmaceutical ingredient (API), excipients and packaging inbound status</p></div>
+      </div>
+      <div class="table-card">
+        <div class="table-head"><h3>Raw material suppliers</h3></div>
+        <div style="overflow-x:auto;">
+        <table>
+          <thead><tr>
+            <th>Material</th><th>Supplier</th><th>Origin</th><th>Availability</th>
+            <th>Status</th><th>Expected arrival</th><th>Risk</th>
+          </tr></thead>
+          <tbody id="suppliersTbody"></tbody>
+        </table>
+        </div>
+      </div>
+      <div class="card">
+        <h3>API-001 supply health</h3>
+        <div class="chart-wrap" style="height:200px;"><canvas id="chartSupplierHealth"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ============ INVENTORY ============ -->
+    <section class="view" id="view-inventory">
+      <div class="page-head">
+        <div><h1>Inventory monitoring</h1><p>Stock levels and days of supply across all NovaCure warehouses</p></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <h3>Days of supply by warehouse</h3>
+          <div class="chart-wrap"><canvas id="chartInventory"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Low-stock alerts <span class="sm" id="lowStockSub">0 active</span></h3>
+          <div class="alert-list" id="lowStockList"></div>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-head"><h3>Warehouse inventory</h3></div>
+        <div style="overflow-x:auto;">
+        <table>
+          <thead><tr>
+            <th>Warehouse</th><th>Material / SKU</th><th>Stock on hand</th>
+            <th>Days of supply</th><th>Reorder point</th><th>Status</th>
+          </tr></thead>
+          <tbody id="inventoryTbody"></tbody>
+        </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRODUCTION ============ -->
+    <section class="view" id="view-production">
+      <div class="page-head">
+        <div><h1>Production visibility</h1><p>Manufacturing lines at NovaCure&rsquo;s Gazipur formulation plant</p></div>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px;" id="prodKpiGrid"></div>
+      <div class="two-col">
+        <div class="card">
+          <h3>Planned vs. actual output (units/day)</h3>
+          <div class="chart-wrap"><canvas id="chartProduction"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Capacity utilization</h3>
+          <div class="chart-wrap"><canvas id="chartCapacity"></canvas></div>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-head"><h3>Production lines</h3></div>
+        <div style="overflow-x:auto;">
+        <table>
+          <thead><tr>
+            <th>Line</th><th>Product</th><th>Planned (units)</th><th>Actual (units)</th>
+            <th>Utilization</th><th>Status</th><th>Delay cause</th>
+          </tr></thead>
+          <tbody id="productionTbody"></tbody>
+        </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SHIPMENTS ============ -->
+    <section class="view" id="view-shipments">
+      <div class="page-head">
+        <div><h1>Shipment tracking</h1><p>Live simulated GPS position for inbound raw materials and outbound finished goods</p></div>
+      </div>
+      <div class="ship-grid" id="shipmentCards"></div>
+      <div class="table-card">
+        <div class="table-head"><h3>All shipments</h3></div>
+        <div style="overflow-x:auto;">
+        <table>
+          <thead><tr>
+            <th>Shipment ID</th><th>Cargo</th><th>Origin</th><th>Destination</th>
+            <th>Status</th><th>ETA</th><th>Delay</th>
+          </tr></thead>
+          <tbody id="shipmentsTbody"></tbody>
+        </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ORDERS ============ -->
+    <section class="view" id="view-orders">
+      <div class="page-head">
+        <div><h1>Customer order tracking</h1><p>Active orders across NovaCure&rsquo;s distributor and pharmacy network</p></div>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px;" id="ordersKpiGrid"></div>
+      <div class="table-card">
+        <div class="table-head">
+          <h3>Orders <span class="sm" id="ordersCountSub"></span></h3>
+          <div class="filter-row" id="orderFilters">
+            <button class="chip active" data-f="all" onclick="setOrderFilter('all')">All</button>
+            <button class="chip" data-f="risk" onclick="setOrderFilter('risk')">At risk</button>
+            <button class="chip" data-f="transit" onclick="setOrderFilter('transit')">In transit</button>
+            <button class="chip" data-f="delivered" onclick="setOrderFilter('delivered')">Delivered</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;max-height:420px;overflow-y:auto;">
+        <table>
+          <thead><tr>
+            <th>Order ID</th><th>Product</th><th>Qty</th><th>Stage</th>
+            <th>Expected delivery</th><th>Status</th>
+          </tr></thead>
+          <tbody id="ordersTbody"></tbody>
+        </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RISK CENTER ============ -->
+    <section class="view" id="view-risk">
+      <div class="page-head">
+        <div><h1>Risk & alert center</h1><p>Automatically generated alerts across the end-to-end network</p></div>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px;" id="riskKpiGrid"></div>
+      <div class="table-card" style="padding:16px 18px;">
+        <h3 style="font-family:'Space Grotesk';font-size:14.5px;margin-bottom:12px;color:var(--text);">All alerts</h3>
+        <div class="alert-list" id="riskAlertList"></div>
+      </div>
+    </section>
+
+    <!-- ============ PORTAL ============ -->
+    <section class="view" id="view-portal">
+      <div class="page-head">
+        <div><h1>Customer order tracking portal</h1><p>Public-facing lookup &mdash; simulated as a customer would see it</p></div>
+      </div>
+      <div class="portal-wrap">
+        <div class="portal-card">
+          <div class="pk">NovaCure customer portal</div>
+          <h2>Track your order</h2>
+          <div class="psub">Enter your order ID to view real-time status, shipment progress and delivery ETA.</div>
+          <div class="portal-search">
+            <input type="text" id="portalInput" placeholder="e.g. ORD-30014" onkeydown="if(event.key==='Enter')trackOrder()">
+            <button class="btn btn-success" onclick="trackOrder()">Track order</button>
+          </div>
+          <div class="portal-hint" id="portalHint">Try <b>ORD-30014</b> or <b>ORD-30089</b></div>
+        </div>
+
+        <div class="portal-card result-card" id="portalResult"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="foot-note"></div>
+
+<script>
+/* ============================================================
+   DATA MODEL
+   ============================================================ */
+const PRODUCTS = ["CardioProtect 500mg","GlucoBalance 250mg","RespiClear Inhaler","PainEase 400mg","ImmunoShield Syrup"];
+
+let phase = "normal"; // normal | disrupted | resolved
+let DELAY_DAYS = 5;
+
+const suppliers = [
+  {id:"API-001", material:"Active Pharmaceutical Ingredient (API)", supplier:"SinoPharm Chemicals", origin:"Shanghai, China", availability:"92%", etaNormal:"Aug 15", primary:true},
+  {id:"EXC-002", material:"Excipients (Lactose, Starch)", supplier:"Bengal Excipients Ltd.", origin:"Narayanganj, BD", availability:"98%", etaNormal:"On site", primary:false},
+  {id:"PKG-003", material:"Blister & Foil Packaging", supplier:"Bengal Packaging Ltd.", origin:"Gazipur, BD", availability:"95%", etaNormal:"Aug 12", primary:false},
+  {id:"API-ALT", material:"Alternate API (standby)", supplier:"BioGen Labs", origin:"Hyderabad, India", availability:"—", etaNormal:"Standby", primary:false}
+];
+
+// daysBadBase / actualBadBase / progressBadBase are anchor values at a 5-day delay (sev = 1).
+// Actual displayed values scale with the selected delay via sevFactor().
+const inventory = [
+  {wh:"Dhaka Central DC", item:"API-001 (raw material)", stock:"1,860 kg", daysNormal:18, daysBadBase:13, reorder:10},
+  {wh:"Dhaka Central DC", item:"CardioProtect 500mg (FG)", stock:"340,000 units", daysNormal:22, daysBadBase:19, reorder:12},
+  {wh:"Chattogram Distribution Hub", item:"GlucoBalance 250mg (FG)", stock:"128,000 units", daysNormal:15, daysBadBase:13, reorder:10},
+  {wh:"Rajshahi Regional Store", item:"RespiClear Inhaler (FG)", stock:"41,500 units", daysNormal:9, daysBadBase:7, reorder:8},
+  {wh:"Dhaka Central DC", item:"PainEase 400mg (FG)", stock:"96,000 units", daysNormal:14, daysBadBase:12, reorder:10}
+];
+
+const production = [
+  {line:"Line 1 — Tablet compression", product:"CardioProtect 500mg", planned:50000, actualNormal:48500, actualBadBase:37000},
+  {line:"Line 2 — Tablet compression", product:"GlucoBalance 250mg", planned:38000, actualNormal:36800, actualBadBase:30500},
+  {line:"Line 3 — Syrup filling", product:"ImmunoShield Syrup", planned:22000, actualNormal:21200, actualBadBase:21000},
+  {line:"Line 4 — Inhaler assembly", product:"RespiClear Inhaler", planned:14000, actualNormal:13500, actualBadBase:9800}
+];
+
+const shipments = [
+  {id:"SHP-2201", cargo:"API-001 raw material (bulk)", origin:"Shanghai Port, CN", dest:"Gazipur Plant, BD", progressNormal:62, progressBadBase:38, isApi:true, coordsNormal:"22.31N, 91.83E — Bay of Bengal", coordsBad:"5.9N, 95.3E — Malacca Strait (rerouted)"},
+  {id:"SHP-2214", cargo:"CardioProtect 500mg (FG)", origin:"Gazipur Plant, BD", dest:"Dhaka Central DC", progressNormal:80, progressBadBase:80, isApi:false, coordsNormal:"23.9N, 90.3E — Dhaka bypass", coordsBad:"23.9N, 90.3E — Dhaka bypass"},
+  {id:"SHP-2219", cargo:"GlucoBalance 250mg (FG)", origin:"Gazipur Plant, BD", dest:"Chattogram Distribution Hub", progressNormal:45, progressBadBase:45, isApi:false, coordsNormal:"22.7N, 91.1E — N1 Highway", coordsBad:"22.7N, 91.1E — N1 Highway"},
+  {id:"SHP-2226", cargo:"Export order — RespiClear Inhaler", origin:"Gazipur Plant, BD", dest:"Colombo, LK", progressNormal:20, progressBadBase:20, isApi:false, coordsNormal:"22.3N, 91.8E — pre-departure", coordsBad:"22.3N, 91.8E — pre-departure"}
+];
+
+function seedRandom(seed){let s=seed%2147483647;if(s<=0)s+=2147483646;return function(){s=s*16807%2147483647;return (s-1)/2147483646;};}
+const rnd = seedRandom(19870815);
+
+function genOrders(count){
+  const stages = ["Order placed","Processing","In production","Shipped","Out for delivery"];
+  const arr = [];
+  for(let i=0;i<count;i++){
+    const idx = 30001+i;
+    const product = PRODUCTS[Math.floor(rnd()*PRODUCTS.length)];
+    const qty = Math.floor(rnd()*400)+50;
+    const stage = stages[Math.floor(rnd()*stages.length)];
+    const day = 12 + Math.floor(rnd()*10);
+    arr.push({ id:"ORD-"+idx, product, qty, stage, dueDayNormal: day, rank: 0 });
+  }
+  return arr;
+}
+const orders = genOrders(150);
+
+// Assign a deterministic shuffled risk rank (0 = affected first as severity grows).
+(function assignRanks(){
+  const idxs = orders.map((o,i)=>i);
+  for(let i=idxs.length-1;i>0;i--){
+    const j = Math.floor(rnd()*(i+1));
+    const t = idxs[i]; idxs[i]=idxs[j]; idxs[j]=t;
+  }
+  idxs.forEach((origIdx, rank)=>{ orders[origIdx].rank = rank; });
+})();
+
+/* ============================================================
+   SEVERITY MODEL — everything downstream scales with DELAY_DAYS
+   ============================================================ */
+function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+function sevFactor(){ return DELAY_DAYS/5; }
+function getAffectedCount(){ return clamp(Math.round(DELAY_DAYS*25.4), 0, orders.length); }
+function isAffected(o){ return phase==="disrupted" && o.rank < getAffectedCount(); }
+function getDeliveryRisk(){ return phase==="disrupted" ? clamp(DELAY_DAYS-2, 0, DELAY_DAYS) : 0; }
+function apiEtaBadLabel(){ return "Aug "+(15+DELAY_DAYS); }
+function dynamicDays(item){ return clamp(item.daysNormal - Math.round((item.daysNormal-item.daysBadBase)*sevFactor()), 2, item.daysNormal); }
+function dynamicActual(line){ return clamp(line.actualNormal - Math.round((line.actualNormal-line.actualBadBase)*sevFactor()), 0, line.planned); }
+function dynamicProgress(s){ return clamp(s.progressNormal - Math.round((s.progressNormal-s.progressBadBase)*sevFactor()), 5, s.progressNormal); }
+function getApiDaysOfSupply(){ return phase==="disrupted" ? dynamicDays(inventory[0]) : inventory[0].daysNormal; }
+function getProductionStatus(){ return phase==="disrupted" ? "amber" : "green"; }
+function getOnTimeShipmentRate(){ return phase==="disrupted" ? clamp(96-Math.round(17*sevFactor()),0,100) : 96; }
+function getOrdersOnTimeRate(){ return phase==="disrupted" ? clamp(99-Math.round(23*sevFactor()),0,100) : 99; }
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function el(id){return document.getElementById(id);}
+function fmtDate(day){return "Aug "+day+", 2026";}
+
+function badge(status){
+  const map = {
+    green:{cls:"green",label:"On track"},
+    amber:{cls:"amber",label:"At risk"},
+    red:{cls:"red",label:"Delayed"},
+    blue:{cls:"blue",label:"Standby"}
+  };
+  const m = map[status];
+  return '<span class="badge '+m.cls+'"><span class="d"></span>'+m.label+'</span>';
+}
+
+function initDelaySelect(){
+  const sel = el('delayDaysSelect');
+  let opts = '';
+  for(let d=1; d<=10; d++){ opts += '<option value="'+d+'"'+(d===5?' selected':'')+'>+'+d+' day'+(d>1?'s':'')+'</option>'; }
+  sel.innerHTML = opts;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el('view-'+name).classList.add('active');
+  document.querySelector('.nav-item[data-view="'+name+'"]').classList.add('active');
+  closeSidebar();
+}
+
+function toggleSidebar(){
+  el('sidebar').classList.toggle('open');
+  el('sidebarBackdrop').classList.toggle('show');
+}
+function closeSidebar(){
+  el('sidebar').classList.remove('open');
+  el('sidebarBackdrop').classList.remove('show');
+}
+
+/* ============================================================
+   CHARTS (created once, updated on state change)
+   ============================================================ */
+Chart.defaults.color = '#5B6D69';
+Chart.defaults.font.family = "Inter";
+Chart.defaults.borderColor = '#E7EFED';
+
+let chartOrdersTrend, chartSupplierHealth, chartInventory, chartProduction, chartCapacity;
+
+function buildCharts(){
+  const gridColor = '#E7EFED';
+
+  chartOrdersTrend = new Chart(el('chartOrdersTrend'), {
+    type:'line',
+    data:{
+      labels:['-7h','-6h','-5h','-4h','-3h','-2h','-1h','Now'],
+      datasets:[{
+        label:'Orders at risk', data:[0,0,0,0,0,0,0,0],
+        borderColor:'#D1393B', backgroundColor:'rgba(209,57,59,.10)',
+        tension:.35, fill:true, pointRadius:0, borderWidth:2
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:gridColor}},
+        y:{grid:{color:gridColor}, beginAtZero:true, suggestedMax:160}
+      }
+    }
+  });
+
+  chartSupplierHealth = new Chart(el('chartSupplierHealth'), {
+    type:'bar',
+    data:{
+      labels:['API-001 availability %','On-time delivery %','Days of supply (API)'],
+      datasets:[{
+        data:[92,88,18],
+        backgroundColor:['#0E8F86','#3568C7','#1F9D55'],
+        borderRadius:6, barThickness:34
+      }]
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:gridColor}, beginAtZero:true}, y:{grid:{display:false}}}
+    }
+  });
+
+  chartInventory = new Chart(el('chartInventory'), {
+    type:'bar',
+    data:{
+      labels: inventory.map(i=>i.wh+' — '+i.item.split(' (')[0]),
+      datasets:[{ data: inventory.map(i=>i.daysNormal), backgroundColor:'#0E8F86', borderRadius:6 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false}, ticks:{font:{size:9.5}, maxRotation:28, minRotation:28}},
+        y:{grid:{color:gridColor}, title:{display:true,text:'Days of supply',color:'#5B6D69',font:{size:11}}}
+      }
+    }
+  });
+
+  chartProduction = new Chart(el('chartProduction'), {
+    type:'bar',
+    data:{
+      labels: production.map(p=>p.line.split(' — ')[0]),
+      datasets:[
+        {label:'Planned', data: production.map(p=>p.planned), backgroundColor:'#DEE7E5', borderRadius:6},
+        {label:'Actual', data: production.map(p=>p.actualNormal), backgroundColor:'#0E8F86', borderRadius:6}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom', labels:{boxWidth:10, font:{size:11}}}},
+      scales:{x:{grid:{display:false}}, y:{grid:{color:gridColor}}}
+    }
+  });
+
+  chartCapacity = new Chart(el('chartCapacity'), {
+    type:'doughnut',
+    data:{
+      labels:['Utilized','Idle'],
+      datasets:[{data:[92,8], backgroundColor:['#0E8F86','#E7EFED'], borderWidth:0}]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'72%',
+      plugins:{legend:{display:false}}
+    },
+    plugins:[{
+      id:'centerText',
+      afterDraw(chart){
+        const {ctx, chartArea:{width,height,left,top}} = chart;
+        ctx.save();
+        ctx.font = "600 24px 'Space Grotesk'";
+        ctx.fillStyle = "#122522";
+        ctx.textAlign = "center"; ctx.textBaseline="middle";
+        ctx.fillText(chart.data.datasets[0].data[0]+"%", left+width/2, top+height/2-6);
+        ctx.font = "500 10.5px 'Inter'";
+        ctx.fillStyle = "#8FA09C";
+        ctx.fillText("utilization", left+width/2, top+height/2+14);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+let ordersTrendHistory = [0,0,0,0,0,0,0,0];
+function pushOrdersTrend(val){
+  ordersTrendHistory = ordersTrendHistory.slice(1).concat(val);
+  chartOrdersTrend.data.datasets[0].data = ordersTrendHistory;
+  chartOrdersTrend.update();
+}
+
+/* ============================================================
+   RENDER: OVERVIEW
+   ============================================================ */
+function renderBanner(){
+  const box = el('overviewBanner');
+  const affected = getAffectedCount();
+  const delivRisk = getDeliveryRisk();
+  const dayWord = DELAY_DAYS>1 ? 'days' : 'day';
+  if(phase==="disrupted"){
+    box.innerHTML = '<div class="banner crit"><div class="ic">&#128308;</div><div><div class="tt">Critical: API-001 shipment delayed by '+DELAY_DAYS+' '+dayWord+'</div><div class="dd">SinoPharm Chemicals shipment SHP-2201 rerouted through the Malacca Strait. '+affected+' customer orders may be affected. Estimated delivery impact: +'+delivRisk+' days.</div></div></div>';
+  } else if(phase==="resolved"){
+    box.innerHTML = '<div class="banner ok"><div class="ic">&#128994;</div><div><div class="tt">Disruption mitigated — customer deliveries protected</div><div class="dd">Alternate API supplier BioGen Labs (Hyderabad) activated. Expedited air freight restored raw material availability. All flagged orders returned to normal delivery schedule.</div></div></div>';
+  } else {
+    box.innerHTML = '';
+  }
+}
+
+function kpiCard(label, value, unit, state, delta){
+  return '<div class="kpi '+(state==='green'?'':state)+'">'+
+    '<div class="lbl">'+label+'</div>'+
+    '<div class="val" id="'+value.id+'">'+value.text+(unit?' <span class="unit">'+unit+'</span>':'')+'</div>'+
+    (delta? '<div class="delta '+delta.cls+'">'+delta.text+'</div>':'')+
+  '</div>';
+}
+
+function renderKPIs(){
+  const apiDays = getApiDaysOfSupply();
+  const ordersAtRisk = phase==="disrupted" ? getAffectedCount() : 0;
+  const deliveryRisk = getDeliveryRisk();
+  const bad = phase==="disrupted";
+
+  el('kpiGrid').innerHTML =
+    kpiCard('API days of supply', {id:'kpiApiDays', text:apiDays}, 'days', bad?'crit':'', bad? {cls:'bad', text:'▼ down from 18 days'} : null) +
+    kpiCard('Production status', {id:'kpiProdStatus', text: bad?'At risk':'On track'}, '', bad?'warn':'', bad? {cls:'bad', text:'Utilization down'} : {cls:'good', text:'Utilization 92%'}) +
+    kpiCard('Orders at risk', {id:'kpiOrdersRisk', text:ordersAtRisk}, 'orders', bad?'crit':'', bad? {cls:'bad', text:'▲ '+ordersAtRisk+' orders flagged'} : null) +
+    kpiCard('Customer delivery risk', {id:'kpiDeliveryRisk', text:(bad?'+':'')+deliveryRisk}, 'days', bad?'warn':'', bad? {cls:'bad', text:'Avg. delay across network'} : null) +
+    kpiCard('On-time shipment rate', {id:'kpiOtif', text: getOnTimeShipmentRate()}, '%', bad?'warn':'', null) +
+    kpiCard('Active shipments', {id:'kpiActiveShip', text: shipments.length}, 'in transit', '', null);
+}
+
+function renderFlow(){
+  const bad = phase==="disrupted";
+  const apiDays = getApiDaysOfSupply();
+  const affected = getAffectedCount();
+  const delivRisk = getDeliveryRisk();
+  let totalPlanned=0, totalActual=0;
+  production.forEach(p=>{ totalPlanned+=p.planned; totalActual += bad? dynamicActual(p) : p.actualNormal; });
+  const util = Math.round(totalActual/totalPlanned*100);
+
+  const nodes = [
+    {ic:'&#127970;', title:'Supplier', normalSub:'SinoPharm — 92% avail.', badSub:'Shipment delayed'},
+    {ic:'&#129514;', title:'Raw material', normalSub:'ETA Aug 15', badSub:'ETA '+apiEtaBadLabel()+' (+'+DELAY_DAYS+'d)'},
+    {ic:'&#128230;', title:'Inventory', normalSub:'18 days supply', badSub:apiDays+' days supply'},
+    {ic:'&#9881;', title:'Production', normalSub:'On track · 92%', badSub:'At risk · '+util+'%'},
+    {ic:'&#128666;', title:'Shipment', normalSub:'On schedule', badSub:affected+' at risk'},
+    {ic:'&#128100;', title:'Customer', normalSub:'0 delayed', badSub:'+'+delivRisk+' days delay'}
+  ];
+  let html = '';
+  nodes.forEach((n,i)=>{
+    let state = 'green';
+    if(bad){
+      if(i<=1) state='red';
+      else if(i<=4) state='amber';
+      else state='red';
+    }
+    html += '<div class="flow-node">'+
+      '<div class="node-ic st-'+state+'">'+n.ic+'</div>'+
+      '<div class="node-title">'+n.title+'</div>'+
+      '<div class="node-sub st-'+(state==='green'?'':state)+'">'+(bad? n.badSub : n.normalSub)+'</div>'+
+    '</div>';
+    if(i<nodes.length-1){
+      html += '<div class="flow-connector '+(bad?'bad':'active')+'"></div>';
+    }
+  });
+  el('flowRow').innerHTML = html;
+}
+
+function renderOverviewAlerts(){
+  const alerts = getAlerts();
+  el('overviewAlertSub').textContent = alerts.length + ' open';
+  if(alerts.length===0){
+    el('overviewAlertList').innerHTML = '<div class="empty-state"><div class="ic">&#9989;</div>All clear — no active alerts.</div>';
+  } else {
+    el('overviewAlertList').innerHTML = alerts.slice(0,4).map(alertHtml).join('');
+  }
+}
+
+function renderRecCard(){
+  el('recCard').classList.toggle('show', phase==="disrupted");
+}
+
+function renderStatusPill(){
+  const pill = el('globalStatusPill'), text = el('globalStatusText');
+  pill.classList.remove('warn','crit');
+  if(phase==="disrupted"){ pill.classList.add('crit'); text.textContent = 'Critical disruption active'; }
+  else if(phase==="resolved"){ text.textContent = 'Disruption mitigated'; }
+  else { text.textContent = 'All systems on track'; }
+}
+
+/* ============================================================
+   RENDER: SUPPLIERS
+   ============================================================ */
+function renderSuppliers(){
+  const bad = phase==="disrupted";
+  el('suppliersTbody').innerHTML = suppliers.map(s=>{
+    let status='green', eta=s.etaNormal;
+    if(s.primary){ status = bad?'red':'green'; eta = bad? apiEtaBadLabel() : s.etaNormal; }
+    if(s.id==='API-ALT'){ status = (phase==='resolved') ? 'green':'blue'; eta = (phase==='resolved') ? 'Aug 14 (expedited)' : s.etaNormal; }
+    const rowHl = (s.primary && bad) ? 'hl' : '';
+    const risk = s.primary ? (bad?'High':'Low') : (s.id==='API-ALT'? (phase==='resolved'?'Activated':'Standby') : 'Low');
+    return '<tr class="'+rowHl+'">'+
+      '<td>'+s.material+'</td>'+
+      '<td>'+s.supplier+'</td>'+
+      '<td class="mono-cell">'+s.origin+'</td>'+
+      '<td class="mono-cell">'+s.availability+'</td>'+
+      '<td>'+badge(status)+'</td>'+
+      '<td class="mono-cell">'+eta+'</td>'+
+      '<td>'+risk+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+/* ============================================================
+   RENDER: INVENTORY
+   ============================================================ */
+function renderInventory(){
+  const bad = phase==="disrupted";
+  el('inventoryTbody').innerHTML = inventory.map(i=>{
+    const days = bad? dynamicDays(i) : i.daysNormal;
+    const low = days <= i.reorder+2;
+    const status = days<=i.reorder ? 'red' : (low ? 'amber':'green');
+    const pct = Math.min(100, Math.round(days/25*100));
+    return '<tr>'+
+      '<td>'+i.wh+'</td>'+
+      '<td>'+i.item+'</td>'+
+      '<td class="mono-cell">'+i.stock+'</td>'+
+      '<td><div class="days-bar"><div class="pbar-track"><div class="pbar-fill" style="width:'+pct+'%;background:'+(status==='red'?'var(--red)':status==='amber'?'var(--amber)':'var(--accent)')+'"></div></div><span class="n mono">'+days+'d</span></div></td>'+
+      '<td class="mono-cell">'+i.reorder+'d</td>'+
+      '<td>'+badge(status)+'</td>'+
+    '</tr>';
+  }).join('');
+
+  const lowStock = inventory.filter(i=>{const d=bad?dynamicDays(i):i.daysNormal; return d<=i.reorder+2;});
+  el('lowStockSub').textContent = lowStock.length + ' active';
+  if(lowStock.length===0){
+    el('lowStockList').innerHTML = '<div class="empty-state"><div class="ic">&#9989;</div>All warehouses above reorder point.</div>';
+  } else {
+    el('lowStockList').innerHTML = lowStock.map(i=>{
+      const d = bad?dynamicDays(i):i.daysNormal;
+      const crit = d<=i.reorder;
+      return '<div class="alert-item '+(crit?'red':'amber')+'"><div class="aic">'+(crit?'&#128308;':'&#128993;')+'</div><div><div class="at">'+i.item+'</div><div class="ad">'+i.wh+' — '+d+' days of supply remaining (reorder at '+i.reorder+'d)</div></div></div>';
+    }).join('');
+  }
+
+  chartInventory.data.datasets[0].data = inventory.map(i=> bad? dynamicDays(i) : i.daysNormal);
+  chartInventory.data.datasets[0].backgroundColor = inventory.map(i=>{
+    const d = bad? dynamicDays(i) : i.daysNormal;
+    return d<=i.reorder ? '#D1393B' : (d<=i.reorder+2 ? '#B5790A' : '#0E8F86');
+  });
+  chartInventory.update();
+}
+
+/* ============================================================
+   RENDER: PRODUCTION
+   ============================================================ */
+function renderProduction(){
+  const bad = phase==="disrupted";
+  el('productionTbody').innerHTML = production.map(p=>{
+    const actual = bad? dynamicActual(p) : p.actualNormal;
+    const util = Math.round(actual/p.planned*100);
+    const status = util>=85 ? 'green' : (util>=65 ? 'amber':'red');
+    return '<tr>'+
+      '<td>'+p.line+'</td>'+
+      '<td>'+p.product+'</td>'+
+      '<td class="mono-cell">'+p.planned.toLocaleString()+'</td>'+
+      '<td class="mono-cell">'+actual.toLocaleString()+'</td>'+
+      '<td><div class="days-bar"><div class="pbar-track"><div class="pbar-fill" style="width:'+util+'%;background:'+(status==='red'?'var(--red)':status==='amber'?'var(--amber)':'var(--accent)')+'"></div></div><span class="n mono">'+util+'%</span></div></td>'+
+      '<td>'+badge(status)+'</td>'+
+      '<td class="mono-cell" style="font-size:11.5px;">'+(bad? 'API-001 shortage':'—')+'</td>'+
+    '</tr>';
+  }).join('');
+
+  const totalPlanned = production.reduce((a,p)=>a+p.planned,0);
+  const totalActual = production.reduce((a,p)=>a+(bad?dynamicActual(p):p.actualNormal),0);
+  const utilPct = Math.round(totalActual/totalPlanned*100);
+
+  el('prodKpiGrid').innerHTML =
+    kpiCard('Overall status', {id:'pk1', text: bad?'At risk':'On track'}, '', bad?'warn':'', null) +
+    kpiCard('Capacity utilization', {id:'pk2', text: utilPct}, '%', utilPct<80?'warn':'', null) +
+    kpiCard('Planned output', {id:'pk3', text: totalPlanned.toLocaleString()}, 'units/day', '', null) +
+    kpiCard('Actual output', {id:'pk4', text: totalActual.toLocaleString()}, 'units/day', bad?'warn':'', bad? {cls:'bad', text:'▼ '+Math.round((1-totalActual/totalPlanned)*100)+'% shortfall'} : null);
+
+  chartProduction.data.datasets[1].data = production.map(p=> bad? dynamicActual(p) : p.actualNormal);
+  chartProduction.data.datasets[1].backgroundColor = bad? '#B5790A':'#0E8F86';
+  chartProduction.update();
+
+  chartCapacity.data.datasets[0].data = [utilPct, 100-utilPct];
+  chartCapacity.data.datasets[0].backgroundColor = [bad?'#B5790A':'#0E8F86','#E7EFED'];
+  chartCapacity.update();
+}
+
+/* ============================================================
+   RENDER: SHIPMENTS
+   ============================================================ */
+function renderShipments(){
+  const bad = phase==="disrupted";
+
+  el('shipmentCards').innerHTML = shipments.map(s=>{
+    const progress = bad? dynamicProgress(s) : s.progressNormal;
+    const status = (s.isApi && bad) ? 'red' : 'green';
+    const coords = (s.isApi && bad) ? s.coordsBad : s.coordsNormal;
+    const eta = (s.isApi && bad) ? apiEtaBadLabel() : (s.isApi? 'Aug 15' : (s.id==='SHP-2219'? (bad?'Aug 16':'Aug 14') : (s.id==='SHP-2214'?'Aug 12':'Aug 19')));
+    return '<div class="ship-card '+(s.isApi && bad?'hl':'')+'">'+
+      '<div class="shdr"><div><div class="sid">'+s.id+'</div><div class="sroute">'+s.origin+' &rarr; '+s.dest+'</div></div>'+badge(status)+'</div>'+
+      '<div style="font-size:12px;color:var(--text-dim);margin-top:6px;">'+s.cargo+'</div>'+
+      '<div class="route-wrap">'+
+        '<div class="route-track"><div class="route-fill" style="width:'+progress+'%;background:'+(status==='red'?'var(--red)':'var(--accent)')+'"></div>'+
+          '<div class="route-dot" style="left:'+progress+'%;border-color:'+(status==='red'?'var(--red)':'var(--accent)')+'"></div></div>'+
+        '<div class="route-ends"><span>'+s.origin.split(',')[0]+'</span><span>'+s.dest.split(',')[0]+'</span></div>'+
+        '<div class="route-coords">&#128205; '+coords+'</div>'+
+      '</div>'+
+      '<div class="seta">ETA <b>'+eta+'</b>'+((s.isApi && bad)?'  <span style="color:var(--red);">(+'+DELAY_DAYS+' days)</span>':'')+'</div>'+
+    '</div>';
+  }).join('');
+
+  el('shipmentsTbody').innerHTML = shipments.map(s=>{
+    const status = (s.isApi && bad) ? 'red' : 'green';
+    const eta = (s.isApi && bad) ? apiEtaBadLabel() : (s.isApi? 'Aug 15' : (s.id==='SHP-2219'? (bad?'Aug 16':'Aug 14') : (s.id==='SHP-2214'?'Aug 12':'Aug 19')));
+    const delay = (s.isApi && bad) ? '+'+DELAY_DAYS+' days' : 'On schedule';
+    return '<tr class="'+(s.isApi&&bad?'hl':'')+'">'+
+      '<td class="mono-cell">'+s.id+'</td>'+
+      '<td>'+s.cargo+'</td>'+
+      '<td class="mono-cell">'+s.origin+'</td>'+
+      '<td class="mono-cell">'+s.dest+'</td>'+
+      '<td>'+badge(status)+'</td>'+
+      '<td class="mono-cell">'+eta+'</td>'+
+      '<td style="color:'+(delay==='On schedule'?'var(--text-dim)':'var(--red)')+';font-family:JetBrains Mono;font-size:11.5px;">'+delay+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+/* ============================================================
+   RENDER: ORDERS
+   ============================================================ */
+let orderFilter = 'all';
+function setOrderFilter(f){
+  orderFilter = f;
+  document.querySelectorAll('#orderFilters .chip').forEach(c=>c.classList.toggle('active', c.dataset.f===f));
+  renderOrders();
+}
+
+function renderOrders(){
+  const bad = phase==="disrupted";
+  const atRisk = bad ? getAffectedCount() : 0;
+  const delivRisk = getDeliveryRisk();
+
+  el('ordersKpiGrid').innerHTML =
+    kpiCard('Total active orders', {id:'ok1', text: orders.length}, '', '', null) +
+    kpiCard('At risk of late delivery', {id:'ok2', text: atRisk}, 'orders', atRisk>0?'crit':'', null) +
+    kpiCard('On-time delivery rate', {id:'ok3', text: getOrdersOnTimeRate()}, '%', bad?'warn':'', null) +
+    kpiCard('Avg. expected delay', {id:'ok4', text: bad?('+'+delivRisk):'0'}, 'days', bad?'warn':'', null);
+
+  let list = orders;
+  if(orderFilter==='risk') list = orders.filter(o=> isAffected(o));
+  else if(orderFilter==='transit') list = orders.filter(o=> o.stage==='Shipped' || o.stage==='Out for delivery');
+  else if(orderFilter==='delivered') list = orders.filter(o=> o.stage==='Out for delivery');
+
+  el('ordersCountSub').textContent = '— showing '+Math.min(list.length,60)+' of '+list.length;
+
+  el('ordersTbody').innerHTML = list.slice(0,60).map(o=>{
+    const affected = isAffected(o);
+    const status = affected ? 'amber' : 'green';
+    const day = affected ? o.dueDayNormal+delivRisk : o.dueDayNormal;
+    return '<tr>'+
+      '<td class="mono-cell">'+o.id+'</td>'+
+      '<td>'+o.product+'</td>'+
+      '<td class="mono-cell">'+o.qty+'</td>'+
+      '<td>'+o.stage+'</td>'+
+      '<td class="mono-cell">'+fmtDate(day)+'</td>'+
+      '<td>'+badge(status)+'</td>'+
+    '</tr>';
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:22px;">No orders match this filter.</td></tr>';
+}
+
+/* ============================================================
+   ALERTS ENGINE
+   ============================================================ */
+function getAlerts(){
+  const alerts = [];
+  if(phase==="disrupted"){
+    const affected = getAffectedCount();
+    const apiDays = getApiDaysOfSupply();
+    const dayWord = DELAY_DAYS>1 ? 'days' : 'day';
+    alerts.push({sev:'red', ic:'&#128308;', title:'Critical: API-001 shipment delayed by '+DELAY_DAYS+' '+dayWord, desc:'SHP-2201 ETA moved from Aug 15 to '+apiEtaBadLabel()+'. '+affected+' customer orders may be affected.', src:'Shipment tracking'});
+    alerts.push({sev:'red', ic:'&#9888;', title:'Potential stockout — API-001 raw material', desc:'Days of supply at Dhaka Central DC fell from 18 to '+apiDays+' days, approaching the 10-day reorder point.', src:'Inventory monitoring'});
+    alerts.push({sev:'amber', ic:'&#9881;', title:'Production at risk — Line 1 & Line 2', desc:'Capacity utilization dropped due to constrained API-001 availability.', src:'Production visibility'});
+    alerts.push({sev:'amber', ic:'&#128666;', title:'Supplier delay — SinoPharm Chemicals', desc:'Primary API supplier reporting port congestion in Shanghai; alternate routing added '+DELAY_DAYS+' '+dayWord+' transit time.', src:'Supplier visibility'});
+    alerts.push({sev:'amber', ic:'&#128203;', title:affected+' customer orders at risk of late delivery', desc:'Orders scheduled between Aug 12–Aug 22 now carry an estimated +'+getDeliveryRisk()+' day delivery risk.', src:'Order tracking'});
+  } else if(phase==="resolved"){
+    alerts.push({sev:'green', ic:'&#128994;', title:'Disruption mitigated', desc:'Alternate supplier BioGen Labs activated. All flagged orders returned to normal schedule.', src:'Risk center'});
+  }
+  return alerts;
+}
+
+function alertHtml(a){
+  return '<div class="alert-item '+a.sev+'"><div class="aic">'+a.ic+'</div><div><div class="at">'+a.title+'</div><div class="ad">'+a.desc+'</div><div class="ts">'+a.src+'</div></div></div>';
+}
+
+function renderRiskCenter(){
+  const alerts = getAlerts();
+  const critical = alerts.filter(a=>a.sev==='red').length;
+  const warning = alerts.filter(a=>a.sev==='amber').length;
+
+  el('riskKpiGrid').innerHTML =
+    kpiCard('Open alerts', {id:'rk1', text: alerts.filter(a=>a.sev!=='green').length}, '', alerts.length?'warn':'', null) +
+    kpiCard('Critical', {id:'rk2', text: critical}, '', critical?'crit':'', null) +
+    kpiCard('Warnings', {id:'rk3', text: warning}, '', warning?'warn':'', null) +
+    kpiCard('Orders impacted', {id:'rk4', text: phase==="disrupted"?getAffectedCount():0}, '', phase==="disrupted"?'crit':'', null);
+
+  if(alerts.length===0){
+    el('riskAlertList').innerHTML = '<div class="empty-state"><div class="ic">&#9989;</div>No active alerts. All nodes in the supply chain are on track.</div>';
+  } else {
+    el('riskAlertList').innerHTML = alerts.map(alertHtml).join('');
+  }
+
+  const navCnt = el('navAlertCount');
+  navCnt.textContent = alerts.filter(a=>a.sev!=='green').length;
+  navCnt.classList.toggle('alert', alerts.filter(a=>a.sev!=='green').length>0);
+}
+
+/* ============================================================
+   CUSTOMER PORTAL
+   ============================================================ */
+function trackOrder(){
+  const input = el('portalInput').value.trim().toUpperCase();
+  const order = orders.find(o=>o.id===input);
+  const box = el('portalResult');
+  if(!order){
+    box.classList.add('show');
+    box.innerHTML = '<div class="empty-state"><div class="ic">&#128269;</div>We couldn&#39;t find an order with ID <b class="mono">'+ (input||'—') +'</b>. Check the ID and try again.</div>';
+    return;
+  }
+  const affected = isAffected(order);
+  const stages = ["Order placed","Processing","In production","Shipped","Out for delivery"];
+  const stageIdx = stages.indexOf(order.stage);
+  const delivRisk = getDeliveryRisk();
+  const day = affected ? order.dueDayNormal+delivRisk : order.dueDayNormal;
+
+  let stepsHtml = stages.map((s,i)=>{
+    const cls = i<stageIdx ? 'done' : (i===stageIdx?'current':'');
+    return '<div class="res-step '+cls+'"><div class="rdot">'+(i<stageIdx?'&#10003;':(i+1))+'</div><div class="rlabel">'+s+'</div></div>';
+  }).join('');
+
+  box.classList.add('show');
+  box.innerHTML =
+    '<div class="res-top"><div><div class="rname">'+order.id+'</div><div class="rprod">'+order.product+' &middot; Qty '+order.qty+'</div></div>'+badge(affected?'amber':'green')+'</div>'+
+    '<div class="res-steps">'+stepsHtml+'</div>'+
+    '<div class="res-facts">'+
+      '<div class="res-fact"><div class="fl">Current stage</div><div class="fv">'+order.stage+'</div></div>'+
+      '<div class="res-fact"><div class="fl">Expected delivery</div><div class="fv">'+fmtDate(day)+'</div></div>'+
+      '<div class="res-fact"><div class="fl">Shipment status</div><div class="fv" style="color:'+(affected?'var(--amber)':'var(--green)')+'">'+(affected?'Delayed':'On track')+'</div></div>'+
+    '</div>'+
+    (affected? '<div class="res-alert"><div class="alert-item amber"><div class="aic">&#9888;</div><div><div class="at">Delivery may be delayed by up to '+delivRisk+' days</div><div class="ad">This order depends on API-001 raw material affected by an inbound supplier delay. We are actively working to protect your delivery date.</div></div></div></div>' : '');
+}
+
+/* ============================================================
+   MASTER RENDER
+   ============================================================ */
+function renderAll(){
+  renderBanner();
+  renderKPIs();
+  renderFlow();
+  renderRecCard();
+  renderStatusPill();
+  renderSuppliers();
+  renderInventory();
+  renderProduction();
+  renderShipments();
+  renderOrders();
+  renderRiskCenter();
+  renderOverviewAlerts();
+}
+
+/* ============================================================
+   SIMULATION CONTROLS
+   ============================================================ */
+function simulateDisruption(){
+  if(phase!=="normal") return;
+  DELAY_DAYS = Number(el('delayDaysSelect').value) || 5;
+  phase = "disrupted";
+  el('btnDisrupt').disabled = true;
+  el('delayDaysSelect').disabled = true;
+  el('btnMitigate').style.display = 'flex';
+  renderAll();
+  pushOrdersTrend(getAffectedCount());
+  showView('overview');
+}
+
+function applyRecommendedAction(){
+  if(phase!=="disrupted") return;
+  phase = "resolved";
+  el('btnMitigate').style.display = 'none';
+  renderAll();
+  pushOrdersTrend(0);
+  showView('overview');
+}
+
+function resetSimulation(){
+  phase = "normal";
+  el('btnDisrupt').disabled = false;
+  el('delayDaysSelect').disabled = false;
+  el('btnMitigate').style.display = 'none';
+  ordersTrendHistory = [0,0,0,0,0,0,0,0];
+  renderAll();
+  chartOrdersTrend.data.datasets[0].data = ordersTrendHistory;
+  chartOrdersTrend.update();
+  el('portalResult').classList.remove('show');
+  el('portalInput').value = '';
+  showView('overview');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+initDelaySelect();
+buildCharts();
+renderAll();
+</script>
+</body>
+</html>
